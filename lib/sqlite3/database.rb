@@ -197,14 +197,21 @@ module SQLite3
     def execute sql, bind_vars = [], &block
       prepare(sql) do |stmt|
         stmt.bind_params(bind_vars)
-        stmt = build_result_set stmt
 
         if block
+          stmt = build_result_set stmt
           stmt.each do |row|
             yield row
           end
-        else
+        elsif results_as_hash
+          stmt = HashResultSet.new(self, stmt)
           stmt.to_a.freeze
+        else
+          arr = []
+          while val = stmt.step
+            arr << val
+          end
+          arr.freeze
         end
       end
     end

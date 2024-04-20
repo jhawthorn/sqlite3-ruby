@@ -115,8 +115,7 @@ step(VALUE self)
 {
     sqlite3StmtRubyPtr ctx;
     sqlite3_stmt *stmt;
-    int value, length;
-    VALUE list;
+    int value;
     rb_encoding *internal_encoding;
 
     TypedData_Get_Struct(self, sqlite3StmtRuby, &statement_type, ctx);
@@ -139,11 +138,11 @@ step(VALUE self)
         rb_exc_raise(exception);
     }
 
-    length = sqlite3_column_count(stmt);
-    list = rb_ary_new2((long)length);
-
     switch (value) {
         case SQLITE_ROW: {
+            int length = sqlite3_column_count(stmt);
+            VALUE list = rb_ary_new2((long)length);
+
             int i;
             for (i = 0; i < length; i++) {
                 VALUE val;
@@ -183,21 +182,18 @@ step(VALUE self)
 
                 rb_ary_store(list, (long)i, val);
             }
+            rb_obj_freeze(list);
+            return list;
         }
-        break;
         case SQLITE_DONE:
             ctx->done_p = 1;
             return Qnil;
-            break;
         default:
             sqlite3_reset(stmt);
             ctx->done_p = 0;
             CHECK(sqlite3_db_handle(ctx->st), value);
+            return Qnil;
     }
-
-    rb_obj_freeze(list);
-
-    return list;
 }
 
 /* call-seq: stmt.bind_param(key, value)
