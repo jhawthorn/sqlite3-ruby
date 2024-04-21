@@ -168,7 +168,7 @@ module SQLite3
         INSERT INTO items (name) VALUES ("bar");
         SELECT * FROM items;
       EOSQL
-      assert_equal [{"id" => "1", "name" => "foo"}, {"id" => "2", "name" => "bar"}], return_value
+      assert_equal [{"id" => 1, "name" => "foo"}, {"id" => 2, "name" => "bar"}], return_value
 
       return_value = @db.execute_batch2("SELECT * FROM items;") do |result|
         result["id"] = result["id"].to_i

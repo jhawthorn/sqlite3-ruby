@@ -249,8 +249,6 @@ module SQLite3
       until sql.empty?
         prepare(sql) do |stmt|
           unless stmt.closed?
-            # FIXME: this should probably use sqlite3's api for batch execution
-            # This implementation requires stepping over the results.
             if bind_vars.length == stmt.bind_parameter_count
               stmt.bind_params(bind_vars)
             end
@@ -277,13 +275,34 @@ module SQLite3
     # See also #execute_batch for additional ways of
     # executing statements.
     def execute_batch2(sql, &block)
+      sql = sql.strip
+      result = []
+      until sql.empty?
+        prepare(sql) do |stmt|
+          unless stmt.closed?
+            if row = stmt.step
+              rows = [row]
+              while row = stmt.step
+                rows << row
+              end
+              if @results_as_hash
+                rows.map! do |row|
+                  stmt.columns.zip(row).to_h
+                end
+              end
+              result.concat rows
+            end
+          end
+          sql = stmt.remainder.strip
+        end
+      end
+
       if block
-        result = exec_batch(sql, @results_as_hash)
         result.map do |val|
           yield val
         end
       else
-        exec_batch(sql, @results_as_hash)
+        result
       end
     end
 
