@@ -180,7 +180,7 @@ step(VALUE self)
                         rb_raise(rb_eRuntimeError, "bad type");
                 }
 
-                rb_ary_store(list, (long)i, val);
+                RARRAY_ASET(list, (long)i, val);
             }
             rb_obj_freeze(list);
             return list;
