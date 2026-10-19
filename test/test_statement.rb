@@ -12,6 +12,18 @@ module SQLite3
       @db.close
     end
 
+    def test_to_a
+      @db.execute "create table to_a_test (a integer, b text)"
+      @db.execute "insert into to_a_test values (1, 'x'), (2, NULL)"
+      stmt = @db.prepare("select * from to_a_test order by a")
+      rows = stmt.to_a
+      assert_equal [[1, "x"], [2, nil]], rows
+      assert_predicate rows.first, :frozen?
+      assert_equal [], stmt.to_a
+    ensure
+      stmt&.close
+    end
+
     def test_rows_should_be_frozen
       @db.execute 'CREATE TABLE "things" ("float" float, "int" int, "text" blob, "string" string, "nil" string)'
       stmt = @db.prepare "INSERT INTO things (float, int, text, string, nil) VALUES (?, ?, ?, ?, ?)"

@@ -246,12 +246,14 @@ module SQLite3
     def execute sql, bind_vars = [], &block
       prepare(sql) do |stmt|
         stmt.bind_params(bind_vars)
-        stmt = build_result_set stmt
 
         if block
-          stmt.each do |row|
+          build_result_set(stmt).each do |row|
             yield row
           end
+        elsif results_as_hash
+          columns = stmt.columns
+          stmt.to_a.map! { |row| columns.zip(row).to_h }.freeze
         else
           stmt.to_a.freeze
         end
